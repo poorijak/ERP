@@ -5,13 +5,18 @@ import { checkoutSchema } from "../schema/orders";
 import { db } from "@/lib/db";
 import { generateOrderNumber } from "@/lib/generateOrderNumber";
 import { clearCart } from "@/features/cart/db/carts";
-import { getOrderIdTag, revalidateOrderCache } from "./cache";
+import {
+  getOrderGlobalTag,
+  getOrderIdTag,
+  revalidateOrderCache,
+} from "./cache";
 import {
   unstable_cacheLife as cacheLife,
   unstable_cacheTag as cacheTag,
 } from "next/cache";
 import formatDate from "@/lib/formatDate";
 import { uploadToImagekit } from "@/lib/imagekit";
+import { OrderStatus } from "@prisma/client";
 
 interface checkoutInput {
   address: string;
@@ -193,6 +198,7 @@ export const getOrderById = async (userId: string, orderId: string) => {
       return null;
     }
 
+    // ปั้นข้อมูลเพื่อเอาไปใช้
     const items = order.items.map((item) => {
       const mainImage = item.product.images.find((image) => image.isMain);
 
@@ -331,11 +337,76 @@ export const cancelOrderStatus = async (orderId: string) => {
       });
     });
 
-    revalidateOrderCache(orderId , user.id)
+    revalidateOrderCache(orderId, user.id);
   } catch (error) {
     console.error("Error cancelling order", error);
     return {
       message: "เกิดข้อผิดพลาดในการยกเลิกคำสั่งซื้อ",
     };
+  }
+};
+
+export const getAllOrder = async (userId: string, status?: OrderStatus) => {
+  "use cache";
+
+  if (!userId) {
+    redirect("/auth/signin");
+  }
+
+  cacheLife("minutes");
+  cacheTag(getOrderGlobalTag());
+
+  try {
+    const orders = await db.order.findMany({
+      where: status ? { status } : {}, // หา status ที่ตรงกัน
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: {
+              include: {
+                category: true,
+                images: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+
+    // map order ที่เป็น array ออกมาเพื่อเข้าถึง orderItem
+    const orderDetails = orders.map((order) => {
+      // เปลี่ยนและอัพเดตค่าใน orders
+      return {
+        ...order,
+        // map ordreItem อีกที่เพื่อเข้าถึง array ที่เก็บ orderImtem แต่ละตัว
+        items : order.items.map((item) => {
+          const mainImage = item.product.images.find((image) => image.isMain)
+
+          // เพื่อให้ตรงกับ productType ด้วย
+          return {
+            ...item,
+            // ต้อง product : {...} เพราะว่าเรากำลังแก้ไขและแปลงค่า product อยู่
+            product : {
+            ...item.product,
+            lowStock : 5,
+            mainImage , 
+            sku : item.id.substring(0 , 8).toUpperCase()
+            }
+          }
+          
+        }),
+        createdAtFormated : formatDate(order.createdAt),
+        paymentFormatted : order.paymentAt ? formatDate(order.paymentAt) : null,
+        totalItems : order.items.reduce((sum , item) => sum + item.quantity , 0) // หาผลรวมจำนวน item ทั้งหมด
+        
+      } 
+    })
+
+    return orderDetails
+  } catch (error) {
+    console.error("Error geting all order", error);
+    return [];
   }
 };

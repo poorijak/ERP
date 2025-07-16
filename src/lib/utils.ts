@@ -39,3 +39,4 @@ export const getStatusColor = (status: OrderStatus) => {
       return "bg-gray-500";
   }
 };
+

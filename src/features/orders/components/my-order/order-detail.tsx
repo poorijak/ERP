@@ -22,6 +22,7 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import PaymentFormModal from "../payment-form-modal";
 import CancelModal from "../cancel-order-modal";
+import formatDate from "@/lib/formatDate";
 
 interface OrderDetailProps {
   order: OrderType;
@@ -240,6 +241,26 @@ const OrderDetail = ({ order }: OrderDetailProps) => {
                   </div>
                 </div>
               </>
+            )}
+
+            {order.paymentImage && (
+              <div className="flex flex-col gap-2 pt-2">
+                <h3>หลักฐานการชำระเงิน :</h3>
+                <div className="relative aspect-square w-full rounded-md overflow-hidden border">
+                  <Image
+                    alt="payment slip"
+                    src={order.paymentImage}
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+
+                {order.paymentAt && (
+                  <p className="text-sm text-muted-foreground">
+                    ชำระเงินเมื่อ : <span>{formatDate(order.paymentAt)}</span>
+                  </p>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
