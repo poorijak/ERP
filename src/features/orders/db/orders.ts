@@ -11,6 +11,7 @@ import {
   unstable_cacheTag as cacheTag,
 } from "next/cache";
 import formatDate from "@/lib/formatDate";
+import { uploadToImagekit } from "@/lib/imagekit";
 
 interface checkoutInput {
   address: string;
@@ -67,11 +68,10 @@ export const createOrder = async (input: checkoutInput) => {
     }
 
     const shippingFee = 50;
-
     const orderNumber = generateOrderNumber();
 
     // คิดราคารวม
-    const totalAmount = cart.cardTotal * shippingFee;
+    const totalAmount = cart.cardTotal + shippingFee;
 
     // คำสั่งซื้อใหม่
     const newOrder = await db.$transaction(async (prisma) => {
@@ -227,10 +227,115 @@ export const uploadPaymentSlip = async (orderId: string, file: File) => {
   }
 
   try {
+    const order = await db.order.findUnique({
+      where: {
+        id: orderId,
+      },
+    });
+
+    if (!order) {
+      return {
+        message: "ไม่พบคำสั่งซื้อนี้",
+      };
+    }
+
+    if (order.customerId !== user.id) {
+      return {
+        message: "คุณไม่มีสิทธิ์ในการสั่งซื้อนี้",
+      };
+    }
+
+    if (order.status !== "Pending") {
+      return {
+        message:
+          "ไม่สามารถอัพโหลดหลักฐานการชำระเงินได้ คำสั่งซื้อนี้ได้ชำระเงินแล้ว",
+      };
+    }
+
+    const uploadResult = await uploadToImagekit(file, "payment");
+
+    if (!uploadResult || uploadResult.message) {
+      return {
+        message: "อัพโหลดรูปภาพไม่สำเร็จ",
+      };
+    }
+
+    const updatedOrder = await db.order.update({
+      where: { id: orderId },
+      data: {
+        paymentImage: uploadResult.url,
+        status: "Paid",
+        paymentAt: new Date(),
+      },
+    });
+
+    revalidateOrderCache(updatedOrder.id, updatedOrder.customerId);
   } catch (error) {
     console.error("error uploading payment slip", error);
     return {
       message: "เกิดข้อผิดพลาดในการอัพโหลดสลิปการชำระเงิน",
+    };
+  }
+};
+
+export const cancelOrderStatus = async (orderId: string) => {
+  const user = await authCheck();
+  // เราต้องใช้ || เพราะ || คือถ้ามีอย่างใดอย่างนึงเป็น false ก็จะ redirect ทันที ถ้าใช้ && จะไม่ถูก logic ของการเช็ค เพราะมันจะเช็ค false 2 ค่าเลย
+  if (!user || !canCreateOrder(user)) {
+    redirect("/auth/signin");
+  }
+
+  try {
+    const order = await db.order.findUnique({
+      where: {
+        id: orderId,
+      },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!order) {
+      return {
+        message: "ไม่พบคำสั่งซื้อนี้",
+      };
+    }
+
+    if (order.customerId !== user.id) {
+      return {
+        message: "คุณไม่มีสิทธิ๊ในคำสั่งซื้อนี้",
+      };
+    }
+
+    if (order.status !== "Pending") {
+      return {
+        message:
+          "ไม่สามรถคำสั่งซื้อได้ เนื่องจากคำสั่งซื้อนี้ได้ชำระเงินแล้ว กรุณาติดต่อเราเพื่อสอบถามเพื่อเติม",
+      };
+    }
+
+    await db.$transaction(async (prisma) => {
+      for (const item of order.items) {
+        await prisma.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: { increment: item.quantity },
+            sold: { decrement: item.quantity },
+          },
+        });
+      }
+
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { status: "Cancelled" },
+      });
+    });
+
+    revalidateOrderCache(orderId , user.id)
+  } catch (error) {
+    console.error("Error cancelling order", error);
+    return {
+      message: "เกิดข้อผิดพลาดในการยกเลิกคำสั่งซื้อ",
     };
   }
 };

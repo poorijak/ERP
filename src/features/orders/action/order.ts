@@ -1,7 +1,11 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createOrder, uploadPaymentSlip } from "../db/orders";
+import {
+  cancelOrderStatus,
+  createOrder,
+  uploadPaymentSlip,
+} from "../db/orders";
 import { InitialFormState } from "@/types/action";
 
 export const checkoutFormAction = async (
@@ -29,11 +33,37 @@ export const checkoutFormAction = async (
 };
 
 export const uploadPaymentAction = async (
-  // _prevState: InitialFormState
+  _prevState: InitialFormState,
   formData: FormData
 ) => {
   const orderId = formData.get("order-id") as string;
   const paymentImgae = formData.get("payment-image") as File;
 
   const result = await uploadPaymentSlip(orderId, paymentImgae);
+
+  return result && result.message
+    ? {
+        success: false,
+        message: result.message,
+      }
+    : {
+        success: true,
+        message: "อัพโหลดหลักฐานการชำระเงินสำเร็จ",
+      };
+};
+
+export const cancelOrderAction = async (
+  _prevState: InitialFormState,
+  FormData: FormData
+) => {
+  const orderId = FormData.get("order-id") as string;
+
+  const result = await cancelOrderStatus(orderId);
+
+  return result && result.message ? {
+    success : false , 
+    message : result.message
+  }  : {
+    success : true , message : "ยกเลิกคำสั่งซื้อสำเร็จ"
+  }
 };

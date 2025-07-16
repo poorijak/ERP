@@ -16,19 +16,24 @@ import { formatPrice } from "@/lib/formatPrice";
 import { generatePromptPayQR } from "@/lib/generatePromptPayQR";
 import { getStatusColor, getStatusText } from "@/lib/utils";
 import { OrderType } from "@/types/order";
-import { CreditCard, Upload } from "lucide-react";
+import { Ban, CreditCard, Upload } from "lucide-react";
 import Image from "next/image";
 import React, { useState } from "react";
 import { toast } from "sonner";
 import PaymentFormModal from "../payment-form-modal";
+import CancelModal from "../cancel-order-modal";
 
 interface OrderDetailProps {
   order: OrderType;
 }
 
 const OrderDetail = ({ order }: OrderDetailProps) => {
+  // Qrcode
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   const [isGeneratingQr, setGeneratingQr] = useState(false);
+
+  // modal
+  const [isCancelModal, setIsCancalModal] = useState(false);
   const [isPaymentFormModal, setIsPaymentFormModal] = useState(false);
 
   console.log("qrCode", qrCodeUrl);
@@ -171,6 +176,7 @@ const OrderDetail = ({ order }: OrderDetailProps) => {
               </div>
             </div>
 
+            {/* จะทำงานเมื่อ status เป็น pending เท่านั้น */}
             {order.status === "Pending" && (
               <>
                 <div className="flex flex-col gap-3 pt-2">
@@ -212,9 +218,23 @@ const OrderDetail = ({ order }: OrderDetailProps) => {
                       <span>อัพโหลดหลักฐานการชำระเงิน</span>
                     </Button>
 
+                    <Button
+                      variant="destructive"
+                      onClick={() => setIsCancalModal(true)}
+                    >
+                      <Ban size={16} />
+                      <span>ยกเลิกการสั่งซ์ื้อ</span>
+                    </Button>
+
                     <PaymentFormModal
                       open={isPaymentFormModal}
                       onOpenChange={setIsPaymentFormModal}
+                      orderId={order.id}
+                    />
+
+                    <CancelModal
+                      open={isCancelModal}
+                      onOpenChange={setIsCancalModal}
                       orderId={order.id}
                     />
                   </div>

@@ -8,6 +8,7 @@ import Image from "next/image";
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { uploadPaymentAction } from "../action/order";
+import { useForm } from "@/hooks/use-form";
 
 interface PaymentFormModal {
   open: boolean;
@@ -22,7 +23,10 @@ const PaymentFormModal = ({
 }: PaymentFormModal) => {
   const [preview, setPreview] = useState<string | null>(null);
 
+  const { formAction , isPending} = useForm(uploadPaymentAction)
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    //
     const file = event.target.files?.[0];
 
     if (!file) {
@@ -48,7 +52,7 @@ const PaymentFormModal = ({
       title="อัพโหลดหลักฐานการชำระเงิน"
       description=""
     >
-      <Form action={uploadPaymentAction}>
+      <Form action={formAction}>
         <input type="hidden" name="order-id" value={orderId} />
 
         <div className="flex flex-col gap-4">
@@ -84,12 +88,13 @@ const PaymentFormModal = ({
                 setPreview(null);
                 onOpenChange(false);
               }}
+              disabled={isPending}
             >
               ยกเลิก
             </Button>
-            <Button type="submit" disabled={!preview}>
+            <Button type="submit" disabled={!preview || isPending}>
               <Upload size={16} />
-              <span>อัพโหลด</span>
+              <span>{isPending ? "กำลังอัพโหลด" : "อัพโหลด"}</span>
             </Button>
           </div>
         </div>
