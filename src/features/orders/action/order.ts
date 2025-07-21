@@ -4,13 +4,15 @@ import { redirect } from "next/navigation";
 import {
   cancelOrderStatus,
   createOrder,
+  updateOrderStatus,
   uploadPaymentSlip,
 } from "../db/orders";
 import { InitialFormState } from "@/types/action";
+import { OrderStatus } from "@prisma/client";
 
 export const checkoutFormAction = async (
   _prevState: InitialFormState,
-  formData: FormData
+  formData: FormData,
 ) => {
   const data = {
     address: formData.get("address") as string,
@@ -34,7 +36,7 @@ export const checkoutFormAction = async (
 
 export const uploadPaymentAction = async (
   _prevState: InitialFormState,
-  formData: FormData
+  formData: FormData,
 ) => {
   const orderId = formData.get("order-id") as string;
   const paymentImgae = formData.get("payment-image") as File;
@@ -54,16 +56,41 @@ export const uploadPaymentAction = async (
 
 export const cancelOrderAction = async (
   _prevState: InitialFormState,
-  FormData: FormData
+  FormData: FormData,
 ) => {
   const orderId = FormData.get("order-id") as string;
 
   const result = await cancelOrderStatus(orderId);
 
-  return result && result.message ? {
-    success : false , 
-    message : result.message
-  }  : {
-    success : true , message : "ยกเลิกคำสั่งซื้อสำเร็จ"
-  }
+  return result && result.message
+    ? {
+        success: false,
+        message: result.message,
+      }
+    : {
+        success: true,
+        message: "ยกเลิกคำสั่งซื้อสำเร็จ",
+      };
+};
+
+export const updateOrderStatusAction = async (FormData: FormData) => {
+  const data = {
+    orderId: FormData.get("order-id") as string,
+    status: FormData.get("order-status") as OrderStatus,
+    trackingNumber: FormData.get("tracking-number") as string,
+  };
+
+  console.log(data);
+
+  const result = await updateOrderStatus(data);
+
+  return result && result.message
+    ? {
+        success: false,
+        message: result.message,
+      }
+    : {
+        success: true,
+        message: "เปลี่ยนแปลงสถานะสำเร็จ",
+      };
 };

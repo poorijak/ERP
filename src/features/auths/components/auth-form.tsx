@@ -49,12 +49,12 @@ const AuthForm = ({ type }: AuthFormProps) => {
           renderInput('ยืนยันรหัสผ่าน', 'confirmPassword', 'password', true)}
       </CardContent>
       <CardFooter className='pt-4 flex flex-col gap-2'>
-        <AuthFooter type={type} />
         <SubmitBtn
           name={type === 'signup' ? 'สมัครสมาชิก' : 'เข้าสู่ระบบ'}
           className='w-full'
           pending={isPending}
         />
+        <AuthFooter type={type} />
       </CardFooter>
     </Form>
   )

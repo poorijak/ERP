@@ -7,7 +7,7 @@ export interface OrderType extends Order {
         product : ProductType
     })[]
     customer : UserType
-    createdAtFormated : string
+    createdAtFomatted : string
     paymentFormatted? : string | null,
     totalItems? : number
 }

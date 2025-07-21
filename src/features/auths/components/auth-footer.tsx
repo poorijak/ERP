@@ -6,12 +6,12 @@ interface AuthFooterProps {
 
 const authTextMap = {
   signup: {
-    footerText: 'มีบัญชีอยู่แล้ว?',
+    footerText: 'มีบัญชีอยู่แล้ว? ',
     linkText: 'เข้าสู่ระบบ',
     linkHref: '/auth/signin',
   },
   signin: {
-    footerText: 'ยังไม่มีบัญชี',
+    footerText: 'ยังไม่มีบัญชี ',
     linkText: 'สมัครสมาชิก',
     linkHref: '/auth/signup',
   },
@@ -21,9 +21,9 @@ const AuthFooter = ({ type }: AuthFooterProps) => {
   const { footerText, linkText, linkHref } = authTextMap[type]
 
   return (
-    <div>
+    <div className='text-center flex items-center justify-between w-full'>
       <p className='text-accent-foreground'>
-        {footerText}{' '}
+        {footerText}
         <Link
           href={linkHref}
           className='text-primary hover:underline'
@@ -31,6 +31,9 @@ const AuthFooter = ({ type }: AuthFooterProps) => {
           {linkText}
         </Link>
       </p>
+      {type === 'signin' && (
+        <Link href="/auth/forgot-password" className='text-sm text-muted-foreground hover:text-primary hover:underline'>ลืมรหัสผ่าน</Link>
+      )}
     </div>
   )
 }

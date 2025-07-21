@@ -19,7 +19,6 @@ interface AdminOrderList {
 }
 
 const AdminOrderList = ({ orders }: AdminOrderList) => {
-  console.log(orders);
 
   return (
     <div className="rounded-md border">
@@ -31,7 +30,7 @@ const AdminOrderList = ({ orders }: AdminOrderList) => {
             <TableHead>Date</TableHead>
             <TableHead>Items</TableHead>
             <TableHead>Amount</TableHead>
-            <TableHead className="text-center">Status</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead className="text-right">Action</TableHead>
           </TableRow>
         </TableHeader>
@@ -53,10 +52,10 @@ const AdminOrderList = ({ orders }: AdminOrderList) => {
                 <TableCell className="line-clamp-1">
                   {order.customer.name || order.customer.email}
                 </TableCell>
-                <TableCell>{order.createdAtFormated}</TableCell>
+                <TableCell>{order.createdAtFomatted}</TableCell>
                 <TableCell>{order.totalItems} items</TableCell>
                 <TableCell>{order.totalAmount}</TableCell>
-                <TableCell className="text-center">
+                <TableCell>
                   <Badge className={getStatusColor(order.status)}>
                     {order.status}
                   </Badge>

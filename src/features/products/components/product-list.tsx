@@ -38,15 +38,29 @@ import { useEffect, useState } from "react";
 import DeleteProductModal from "./product_action/delete_product_modal";
 import RestoreProductModal from "./product_action/restore_product_modal";
 import DetailProductModal from "./product_action/detail_product_modal";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface ProductListProps {
   products: ProductType[];
+  totalCount: number;
+  page: number;
+  limit: number;
 }
 
-const ProductList = ({ products }: ProductListProps) => {
+const ProductList = ({
+  products,
+  totalCount,
+  page,
+  limit,
+}: ProductListProps) => {
+
+  const searchParams = useSearchParams();
+  const route = useRouter();
+  const totalPage = Math.ceil(totalCount / limit);
+
   // modal State
   const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(
-    null
+    null,
   );
   const [isDeleteModal, setIsDeleteModal] = useState(false);
   const [isRestoreModal, setIsRestoreModal] = useState(false);
@@ -69,7 +83,7 @@ const ProductList = ({ products }: ProductListProps) => {
 
     if (searchTerm) {
       resutls = resutls.filter((product) =>
-        product.title.toLowerCase().includes(searchTerm.toLowerCase())
+        product.title.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
@@ -101,12 +115,18 @@ const ProductList = ({ products }: ProductListProps) => {
     setSelectedProduct(product);
     setIsDetailModal(true);
   };
+  
+  const handlePageChange = (newPage: number) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("page", newPage.toString());
+    route.push(`/admin/products?${newParams.toString()}`);
+  };
 
   return (
     <>
       <Card>
         <CardHeader className="pb-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle className="text-lg sm:text-xl">Products</CardTitle>
             <Button asChild className="mb-4">
               <Link href="/admin/products/new">
@@ -117,38 +137,38 @@ const ProductList = ({ products }: ProductListProps) => {
           </div>
 
           <Tabs value={activeTabs} onValueChange={handleTabActive}>
-            <TabsList className="grid grid-cols-4 mb-4">
+            <TabsList className="mb-4 grid grid-cols-4">
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="active">Active</TabsTrigger>
               <TabsTrigger value="inactive">Inactive</TabsTrigger>
               <TabsTrigger value="low-stock">Low Stock</TabsTrigger>
             </TabsList>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-4">
+            <div className="mb-4 flex flex-col items-center justify-between gap-4 sm:flex-row">
               <div className="flex gap-2">
-                <Badge variant="outline" className="sm:px-3 py-1">
+                <Badge variant="outline" className="py-1 sm:px-3">
                   <span className="font-semibold text-blue-600">
                     {products.length}
                   </span>
                   Total
                 </Badge>
-                <Badge variant="outline" className="sm:px-3 py-1">
+                <Badge variant="outline" className="py-1 sm:px-3">
                   <span className="font-semibold text-green-600">
                     {products.filter((p) => p.status === "Active").length}
                   </span>
                   Active
                 </Badge>
-                <Badge variant="outline" className="sm:px-3 py-1">
+                <Badge variant="outline" className="py-1 sm:px-3">
                   <span className="font-semibold text-gray-500">
                     {products.filter((p) => p.status === "Inactive").length}
                   </span>
                   Inactive
                 </Badge>
-                <Badge variant="outline" className="sm:px-3 py-1">
+                <Badge variant="outline" className="py-1 sm:px-3">
                   <span className="font-semibold text-amber-600">
                     {
                       products.filter(
-                        (p) => p.stock <= p.lowStock && p.status === "Active"
+                        (p) => p.stock <= p.lowStock && p.status === "Active",
                       ).length
                     }
                   </span>
@@ -159,7 +179,7 @@ const ProductList = ({ products }: ProductListProps) => {
               <div className="relative w-full sm:w-64">
                 <Search
                   size={16}
-                  className="absolute left-2 top-2.5 text-muted-foreground"
+                  className="text-muted-foreground absolute top-2.5 left-2"
                 />
                 <Input
                   value={searchTerm}
@@ -171,7 +191,7 @@ const ProductList = ({ products }: ProductListProps) => {
                   <X
                     onClick={handleClearInput}
                     size={16}
-                    className="absolute right-2 top-2.5 text-muted-foreground hover:cursor-pointer hover:text-primary"
+                    className="text-muted-foreground hover:text-primary absolute top-2.5 right-2 hover:cursor-pointer"
                   />
                 )}
               </div>
@@ -179,7 +199,7 @@ const ProductList = ({ products }: ProductListProps) => {
           </Tabs>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="h-11/12">
           <Table>
             <TableHeader>
               <TableRow>
@@ -206,12 +226,12 @@ const ProductList = ({ products }: ProductListProps) => {
                         }
                         width={40}
                         height={40}
-                        className="object-cover rounded-md"
+                        className="rounded-md object-cover"
                       />
                     </TableCell>
                     <TableCell>
                       <div className="font-medium">{product.title}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-muted-foreground text-xs">
                         {product.sku || "No SKU"}
                       </div>
                     </TableCell>
@@ -223,7 +243,7 @@ const ProductList = ({ products }: ProductListProps) => {
                         {product.price.toLocaleString()}
                       </div>
                       {product.basePrice !== product.price && (
-                        <div className="text-xs line-through text-muted-foreground">
+                        <div className="text-muted-foreground text-xs line-through">
                           {product.basePrice.toLocaleString()}
                         </div>
                       )}
@@ -231,7 +251,7 @@ const ProductList = ({ products }: ProductListProps) => {
                     <TableCell>
                       <div
                         className={cn("text-sm", {
-                          "text-amber-500 font-medium":
+                          "font-medium text-amber-500":
                             product.stock <= product.lowStock,
                         })}
                       >
@@ -304,7 +324,7 @@ const ProductList = ({ products }: ProductListProps) => {
                 <TableRow>
                   <TableCell
                     colSpan={7}
-                    className="text-center h-40 text-muted-foreground"
+                    className="text-muted-foreground h-40 text-center"
                   >
                     No products found
                   </TableCell>
@@ -312,6 +332,24 @@ const ProductList = ({ products }: ProductListProps) => {
               )}
             </TableBody>
           </Table>
+
+          <div className="mt-4 flex items-center justify-between">
+            <Button
+              className="w-30"
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page <= 1}
+            >
+              Previous
+            </Button>
+            <span>Page {page} of {totalPage}</span>
+            <Button
+              className="w-30"
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page >= totalPage}
+            >
+              Next
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

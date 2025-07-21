@@ -1,6 +1,6 @@
 import { authCheck } from "@/features/auths/db/auths";
 import { redirect } from "next/navigation";
-import { canCreateOrder } from "../permission/orders";
+import { canCreateOrder, CanUpdateStatus } from "../permission/orders";
 import { checkoutSchema } from "../schema/orders";
 import { db } from "@/lib/db";
 import { generateOrderNumber } from "@/lib/generateOrderNumber";
@@ -14,7 +14,7 @@ import {
   unstable_cacheLife as cacheLife,
   unstable_cacheTag as cacheTag,
 } from "next/cache";
-import formatDate from "@/lib/formatDate";
+import { formatDate } from "@/lib/formatDate";
 import { uploadToImagekit } from "@/lib/imagekit";
 import { OrderStatus } from "@prisma/client";
 
@@ -23,6 +23,12 @@ interface checkoutInput {
   phone: string;
   note?: string;
   useProfileData?: string;
+}
+
+interface updateStatus {
+  orderId: string;
+  status: OrderStatus;
+  trackingNumber?: string;
 }
 
 export const createOrder = async (input: checkoutInput) => {
@@ -172,6 +178,7 @@ export const getOrderById = async (userId: string, orderId: string) => {
   if (!userId) {
     redirect("/auth/signin");
   }
+
   cacheLife("minutes");
   cacheTag(getOrderIdTag(orderId));
   try {
@@ -216,7 +223,7 @@ export const getOrderById = async (userId: string, orderId: string) => {
     return {
       ...order,
       items,
-      createAtFormatted: formatDate(order.createdAt),
+      createdAtFomatted: formatDate(order.createdAt),
       paymentAtFormatted: order.paymentAt ? formatDate(order.paymentAt) : null,
     };
   } catch (error) {
@@ -358,7 +365,7 @@ export const getAllOrder = async (userId: string, status?: OrderStatus) => {
 
   try {
     const orders = await db.order.findMany({
-      where: status ? { status } : {}, // หา status ที่ตรงกัน
+      where: status ? { status } : {},
       include: {
         customer: true,
         items: {
@@ -374,39 +381,76 @@ export const getAllOrder = async (userId: string, status?: OrderStatus) => {
       },
     });
 
-
-    // map order ที่เป็น array ออกมาเพื่อเข้าถึง orderItem
     const orderDetails = orders.map((order) => {
-      // เปลี่ยนและอัพเดตค่าใน orders
       return {
         ...order,
-        // map ordreItem อีกที่เพื่อเข้าถึง array ที่เก็บ orderImtem แต่ละตัว
-        items : order.items.map((item) => {
-          const mainImage = item.product.images.find((image) => image.isMain)
+        items: order.items.map((item) => {
+          const mainImage = item.product.images.find((image) => image.isMain);
 
-          // เพื่อให้ตรงกับ productType ด้วย
           return {
             ...item,
-            // ต้อง product : {...} เพราะว่าเรากำลังแก้ไขและแปลงค่า product อยู่
-            product : {
-            ...item.product,
-            lowStock : 5,
-            mainImage , 
-            sku : item.id.substring(0 , 8).toUpperCase()
-            }
-          }
-          
+            product: {
+              ...item.product,
+              lowStock: 5,
+              mainImage,
+              sku: item.id.substring(0, 8).toUpperCase(),
+            },
+          };
         }),
-        createdAtFormated : formatDate(order.createdAt),
-        paymentFormatted : order.paymentAt ? formatDate(order.paymentAt) : null,
-        totalItems : order.items.reduce((sum , item) => sum + item.quantity , 0) // หาผลรวมจำนวน item ทั้งหมด
-        
-      } 
-    })
+        createdAtFomatted: formatDate(order.createdAt),
+        paymentFormatted: order.paymentAt ? formatDate(order.paymentAt) : null,
+        totalItems: order.items.reduce((sum, item) => sum + item.quantity, 0),
+      };
+    });
 
-    return orderDetails
+    return orderDetails;
   } catch (error) {
     console.error("Error geting all order", error);
     return [];
+  }
+};
+
+export const updateOrderStatus = async (input: updateStatus) => {
+  const user = await authCheck();
+
+  if (!user || !CanUpdateStatus(user)) {
+    redirect("/");
+  }
+
+  try {
+    const order = await db.order.findUnique({
+      where: { id: input.orderId },
+    });
+
+    if (!order) {
+      return {
+        message: "ไม่พบคำสั่งซ์ื้อนี้",
+      };
+    }
+
+    if (input.status === order.status) {
+      return {
+        message: "ไม่สามารถเปลี่ยนแปลงสถานะได้",
+      };
+    }
+
+    if (input.status === "Cancelled") {
+      await cancelOrderStatus(order.id);
+    }
+
+    const trackingNumber = input.trackingNumber;
+
+    await db.order.update({
+      where: { id: order.id },
+      data: {
+        status: input.status,
+        trackingNumber: trackingNumber || null,
+      },
+    });
+
+    revalidateOrderCache(order.id, user.id);
+  } catch (error) {
+    console.error("Error update order status : ", error);
+    return null;
   }
 };

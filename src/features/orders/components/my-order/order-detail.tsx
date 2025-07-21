@@ -22,7 +22,6 @@ import React, { useState } from "react";
 import { toast } from "sonner";
 import PaymentFormModal from "../payment-form-modal";
 import CancelModal from "../cancel-order-modal";
-import formatDate from "@/lib/formatDate";
 
 interface OrderDetailProps {
   order: OrderType;
@@ -36,8 +35,6 @@ const OrderDetail = ({ order }: OrderDetailProps) => {
   // modal
   const [isCancelModal, setIsCancalModal] = useState(false);
   const [isPaymentFormModal, setIsPaymentFormModal] = useState(false);
-
-  console.log("qrCode", qrCodeUrl);
 
   const handleGenerateQr = () => {
     try {
@@ -55,10 +52,10 @@ const OrderDetail = ({ order }: OrderDetailProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
       <div className="lg:col-span-2">
         <Card>
-          <CardHeader className="border-b">
+          <CardHeader className="border-b pb-2">
             <CardTitle className="text-xl">
               หมายเลขคำสั่งซื้อ: {order.orderNumber}
             </CardTitle>
@@ -82,8 +79,8 @@ const OrderDetail = ({ order }: OrderDetailProps) => {
                 {order.items.map((orderItem, index) => (
                   <TableRow key={index}>
                     <TableCell>
-                      <div className="flex items-center  gap-3">
-                        <div className="relative size-10 border rounded-md overflow-hidden">
+                      <div className="flex items-center gap-3">
+                        <div className="relative size-10 overflow-hidden rounded-md border">
                           <Image
                             alt={orderItem.productTitle}
                             src={
@@ -121,13 +118,13 @@ const OrderDetail = ({ order }: OrderDetailProps) => {
           </CardHeader>
 
           <CardContent className="flex flex-col gap-4">
-            <div className="grid grid-col-1 sm:grid-cols-3 gap-4">
+            <div className="grid-col-1 grid gap-4 sm:grid-cols-3">
               <div>
-                <h3 className="font-medium mb-1">ที่อยู่จัดส่ง : </h3>
+                <h3 className="mb-1 font-medium">ที่อยู่จัดส่ง : </h3>
                 <p className="text-muted-foreground">{order.address || "-"}</p>
               </div>
               <div>
-                <h3 className="font-medium mb-1">เบอร์โทรศัพท์ : </h3>
+                <h3 className="mb-1 font-medium">เบอร์โทรศัพท์ : </h3>
                 <p className="text-muted-foreground">{order.phone || "-"}</p>
               </div>
 
@@ -183,8 +180,8 @@ const OrderDetail = ({ order }: OrderDetailProps) => {
                 <div className="flex flex-col gap-3 pt-2">
                   <div className="flex flex-col gap-2">
                     {qrCodeUrl ? ( // เมื่อเรากดเจน qr button ก็หายไปตาม เงื่อนไข แล้วก็ render รูป qrcode แทน
-                      <div className="rounded-mb border p-4 flex flex-col items-center">
-                        <h3 className="text-center font font-medium mb-3">
+                      <div className="rounded-mb flex flex-col items-center border p-4">
+                        <h3 className="font mb-3 text-center font-medium">
                           สแกน QR Code เพื่อชำระเงิน
                         </h3>
                         <div className="mb-3">
@@ -246,7 +243,7 @@ const OrderDetail = ({ order }: OrderDetailProps) => {
             {order.paymentImage && (
               <div className="flex flex-col gap-2 pt-2">
                 <h3>หลักฐานการชำระเงิน :</h3>
-                <div className="relative aspect-square w-full rounded-md overflow-hidden border">
+                <div className="relative aspect-square w-full overflow-hidden rounded-md border">
                   <Image
                     alt="payment slip"
                     src={order.paymentImage}
@@ -256,8 +253,8 @@ const OrderDetail = ({ order }: OrderDetailProps) => {
                 </div>
 
                 {order.paymentAt && (
-                  <p className="text-sm text-muted-foreground">
-                    ชำระเงินเมื่อ : <span>{formatDate(order.paymentAt)}</span>
+                  <p className="text-muted-foreground text-sm">
+                    ชำระเงินเมื่อ : <span>{order.paymentFormatted}</span>
                   </p>
                 )}
               </div>

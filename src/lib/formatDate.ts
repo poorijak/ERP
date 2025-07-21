@@ -1,6 +1,6 @@
 import dayjs from "@/lib/dayjs";
 
-const formatDate = (date: Date | null | undefined) => {
+export const formatDate = (date: Date | null | undefined) => {
   if (!date) {
     return "-";
   }
@@ -8,5 +8,14 @@ const formatDate = (date: Date | null | undefined) => {
   return dayjs(date).format("DD/MM/YYYY HH:mm");
 };
 
-export default formatDate;
+
+export const formatDateToYMD = (date : Date | null | undefined) =>  {
+  if (!date) {
+    return "-"
+  }
+
+  return dayjs(date).format("YYYY-MM-DD")
+}
+
+
 

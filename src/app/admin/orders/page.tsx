@@ -22,7 +22,7 @@ const page = async ({ searchParams } : AdminOrderPageProps) => {
     redirect("/");
   }
 
-  const status = (await searchParams).status as OrderStatus // as OrderStatus เพื่อ fixec type
+  const status = (await searchParams).status as OrderStatus // as OrderStatus เพื่อ fixed type
 
   const orders = await getAllOrder(user.id  , status);
 
@@ -80,25 +80,26 @@ const page = async ({ searchParams } : AdminOrderPageProps) => {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg sm:text-lg">Ordres</CardTitle>
-        <Tabs defaultValue="all">
+          {/* defaultValue ถ้า มี status ก็จเป็น status ที่เลือก */}
+        <Tabs defaultValue={status || "all"}> 
           <TabsList className="grid grid-cols-6">
             <TabsTrigger value="all" asChild>
               <Link href="/admin/orders">All</Link>
             </TabsTrigger>
             <TabsTrigger value="Pending" asChild>
-              <Link href="/admin/orders?status=shipped">Pending</Link>
+              <Link href="/admin/orders?status=Pending">Pending</Link>
             </TabsTrigger>
             <TabsTrigger value="Paid" asChild>
-              <Link href="/admin/orders?status=padi">Paid</Link>
+              <Link href="/admin/orders?status=Paid">Paid</Link>
             </TabsTrigger>
             <TabsTrigger value="Shipped" asChild>
-              <Link href="/admin/orders?status=shipped">Shipped</Link>
+              <Link href="/admin/orders?status=Shipped">Shipped</Link>
             </TabsTrigger>
             <TabsTrigger value="Delivered" asChild>
-              <Link href="/admin/orders?status=delivered">Delivered</Link>
+              <Link href="/admin/orders?status=Delivered">Delivered</Link>
             </TabsTrigger>
             <TabsTrigger value="Cancelled">
-              <Link href="/admin/orders?status=cancelled">Cancelled</Link>
+              <Link href="/admin/orders?status=Cancelled">Cancelled</Link>
             </TabsTrigger>
           </TabsList>
         </Tabs>

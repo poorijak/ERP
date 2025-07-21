@@ -29,6 +29,7 @@ const CartItem = ({ cart }: CartItemsProps) => {
     cart,
     (state, { type, itemId, newCount }: cartOptimistic) => {
       if (type === "update" && newCount !== undefined) {
+        
         const updatedItems = state.items.map((item) => {
           if (item.id === itemId) {
             const newPrice = newCount * item.product.price;
