@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatPrice } from "@/lib/formatPrice";
+import { formatPrice } from "@/lib/format/formatPrice";
 import { getStatusColor } from "@/lib/utils";
 import { OrderType } from "@/types/order";
 import { OrderStatus } from "@prisma/client";
@@ -36,7 +36,6 @@ interface AdminOrderDetail {
 }
 
 const AdminOrderDetail = ({ order }: AdminOrderDetail) => {
-  
   // เก็บค่าของ select comp บังคับเป็น ordreStatus
   const [selectStatus, setSelectStatus] = useState<OrderStatus>(order.status);
   // เก็บ value ของ tracking Number
@@ -53,7 +52,6 @@ const AdminOrderDetail = ({ order }: AdminOrderDetail) => {
       formData.append("order-id", order.id);
       formData.append("order-status", selectStatus);
 
-      
       if (trackingNubmer) {
         formData.append("tracking-number", trackingNubmer);
       }
@@ -160,7 +158,9 @@ const AdminOrderDetail = ({ order }: AdminOrderDetail) => {
             <CardContent>
               <div>
                 <Label className="text-muted-foreground text-sm">Address</Label>
-                <p className="font-medium">{order.address || "Not provided"}</p>
+                <p className="font-medium">
+                  {order.address?.fullAddress || "Not provided"}
+                </p>
               </div>
               <div>
                 <Label className="text-muted-foreground text-sm">

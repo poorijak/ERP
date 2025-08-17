@@ -41,7 +41,7 @@ const DesktopUserMenu = ({ user, itemCount }: DesktopUserMenuProps) => {
         </DropdownMenuLabel>
 
         <DropdownMenuItem className="cursor-pointer" asChild>
-          <Link href="/profile">โปรไฟล์ของฉัน</Link>
+          <Link href="/account">โปรไฟล์ของฉัน</Link>
         </DropdownMenuItem>
 
         <DropdownMenuItem className="cursor-pointer" asChild>

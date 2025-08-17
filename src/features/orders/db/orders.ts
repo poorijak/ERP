@@ -8,13 +8,14 @@ import { clearCart } from "@/features/cart/db/carts";
 import {
   getOrderGlobalTag,
   getOrderIdTag,
+  getUserOrderTag,
   revalidateOrderCache,
 } from "./cache";
 import {
   unstable_cacheLife as cacheLife,
   unstable_cacheTag as cacheTag,
 } from "next/cache";
-import { formatDate } from "@/lib/formatDate";
+import { formatDate } from "@/lib/format/formatDate";
 import { uploadToImagekit } from "@/lib/imagekit";
 import { OrderStatus } from "@prisma/client";
 
@@ -23,6 +24,7 @@ interface checkoutInput {
   phone: string;
   note?: string;
   useProfileData?: string;
+  addressId: string;
 }
 
 interface updateStatus {
@@ -43,8 +45,7 @@ export const createOrder = async (input: checkoutInput) => {
     const useProfileData = input.useProfileData === "on";
 
     // เช็ค useProfileData ต้องเป็น true ที่อยู่ของ user ที่กรอกมาตอนแรกต้องมีค่า และ เบอร์ของ user ต้องมีค่า
-    if (useProfileData && user.address && user.tel) {
-      input.address = user.address; // เปลี่ยนแปลงค่าใน input เป็นค่าเดียวกับค่าใน user
+    if (useProfileData && user.tel) {
       input.phone = user.tel;
     }
 
@@ -71,6 +72,16 @@ export const createOrder = async (input: checkoutInput) => {
       },
     });
 
+    const existingAddress = await db.address.findUnique({
+      where: { id: input.addressId },
+    });
+
+    if (!existingAddress) {
+      return {
+        message: "ไม่พบที่อยู่นี้",
+      };
+    }
+
     // เช็คว่าในตะกร้ามีสินค้ามั้ย โดยเช็คของในตะกร้า
     if (!cart || cart.cartItems.length === 0) {
       return {
@@ -92,11 +103,11 @@ export const createOrder = async (input: checkoutInput) => {
           orderNumber: orderNumber,
           totalAmount: totalAmount,
           status: "Pending",
-          address: data.address,
           phone: data.phone,
           note: data.note,
           shippingFee: shippingFee,
           customerId: user.id, // user คือใครที่สั่งซื้อ
+          addressId: existingAddress.id,
         },
       });
 
@@ -198,6 +209,7 @@ export const getOrderById = async (userId: string, orderId: string) => {
             },
           },
         },
+        address: true,
       },
     });
 
@@ -229,6 +241,132 @@ export const getOrderById = async (userId: string, orderId: string) => {
   } catch (error) {
     console.error(`Error getting order ${orderId}`, error);
     return null;
+  }
+};
+
+export const getAllOrder = async (
+  page: number,
+  limit: number,
+  status?: OrderStatus,
+) => {
+  "use cache";
+
+  cacheLife("minutes");
+  cacheTag(getOrderGlobalTag());
+
+  const skip = (page - 1) * limit;
+
+  try {
+    const [orders, totalCount] = await Promise.all([
+      db.order.findMany({
+        where: status ? { status } : {},
+        skip,
+        take: limit,
+        include: {
+          customer: true,
+          items: {
+            include: {
+              product: {
+                include: {
+                  category: true,
+                  images: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      db.order.count(),
+    ]);
+
+    return {
+      orders: orders.map((order) => {
+        return {
+          ...order,
+          items: order.items.map((item) => {
+            const mainImage = item.product.images.find((image) => image.isMain);
+
+            return {
+              ...item,
+              product: {
+                ...item.product,
+                lowStock: 5,
+                mainImage,
+                sku: item.id.substring(0, 8).toUpperCase(),
+              },
+            };
+          }),
+          createdAtFomatted: formatDate(order.createdAt),
+          paymentFormatted: order.paymentAt
+            ? formatDate(order.paymentAt)
+            : null,
+          totalItems: order.items.reduce((sum, item) => sum + item.quantity, 0),
+        };
+      }),
+      totalCount,
+    };
+  } catch (error) {
+    console.error("Error geting all order", error);
+    return { orders: [], totalCount: 0 };
+  }
+};
+
+export const getOrderAllWithUser = async (
+  userId: string,
+  page: number,
+  limit: number,
+) => {
+  "use cache";
+
+  cacheLife("hours");
+  cacheTag(getUserOrderTag(userId));
+
+  const skip = (page - 1) * limit;
+
+  try {
+    const [order, allUserOrder, totalOrder] = await Promise.all([
+      db.order.findMany({
+        skip,
+        take: limit,
+        where: { customerId: userId },
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          items: { select: { totalPrice: true, quantity: true } },
+        },
+      }),
+      db.order.findMany({
+        where: { customerId: userId },
+        orderBy: { createdAt: "desc" },
+      }),
+      db.order.count({ where: { customerId: userId } }),
+    ]);
+
+    if (!order) {
+      return null;
+    }
+
+    const totalSpend = allUserOrder.reduce(
+      (total, item) => total + item.totalAmount,
+      0,
+    );
+    const lastOrder = allUserOrder[0];
+
+    return {
+      orderList: order,
+      totalSpend,
+      totalOrder,
+      lastOrder,
+    };
+  } catch (error) {
+    console.error("Error getting order with user", error);
+    return {
+      orderList: [],
+      totalSpend: 0,
+      totalOrder: 0,
+      lastOrder: null,
+    };
   }
 };
 
@@ -350,63 +488,6 @@ export const cancelOrderStatus = async (orderId: string) => {
     return {
       message: "เกิดข้อผิดพลาดในการยกเลิกคำสั่งซื้อ",
     };
-  }
-};
-
-export const getAllOrder = async (userId: string, status?: OrderStatus) => {
-  "use cache";
-
-  if (!userId) {
-    redirect("/auth/signin");
-  }
-
-  cacheLife("minutes");
-  cacheTag(getOrderGlobalTag());
-
-  try {
-    const orders = await db.order.findMany({
-      where: status ? { status } : {},
-      include: {
-        customer: true,
-        items: {
-          include: {
-            product: {
-              include: {
-                category: true,
-                images: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    const orderDetails = orders.map((order) => {
-      return {
-        ...order,
-        items: order.items.map((item) => {
-          const mainImage = item.product.images.find((image) => image.isMain);
-
-          return {
-            ...item,
-            product: {
-              ...item.product,
-              lowStock: 5,
-              mainImage,
-              sku: item.id.substring(0, 8).toUpperCase(),
-            },
-          };
-        }),
-        createdAtFomatted: formatDate(order.createdAt),
-        paymentFormatted: order.paymentAt ? formatDate(order.paymentAt) : null,
-        totalItems: order.items.reduce((sum, item) => sum + item.quantity, 0),
-      };
-    });
-
-    return orderDetails;
-  } catch (error) {
-    console.error("Error geting all order", error);
-    return [];
   }
 };
 

@@ -22,7 +22,39 @@ interface UpdateCategoryInput {
   name: string;
 }
 
-export const getCategories = async () => {
+export const getCategories = async (page: number, limit: number) => {
+  "use cache";
+
+  cacheLife("days");
+  cacheTag(getCategoryGlobalTag());
+
+  const skip = (page - 1) * limit;
+
+  try {
+    const [categories, totalCount] = await Promise.all([
+      db.category.findMany({
+        skip: skip,
+        take: limit,
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          name: true,
+          status: true,
+        },
+      }),
+      db.category.count(),
+    ]);
+
+    return {
+      categories,
+      totalCount,
+    };
+  } catch (error) {
+    console.error("Error getting categories data:", error);
+    return { categories: [], totalCount: 0 };
+  }
+};
+export const getCategoriesAll = async () => {
   "use cache";
 
   cacheLife("days");
@@ -38,7 +70,7 @@ export const getCategories = async () => {
       },
     });
   } catch (error) {
-    console.error("Error getting categories data:", error);
+    console.error("Error getting categories all data:", error);
     return [];
   }
 };

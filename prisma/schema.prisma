@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,6 +5,138 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(uuid())
+  name      String?
+  email     String     @unique
+  password  String
+  status    UserStatus @default(Active)
+  role      UserRole   @default(Customer)
+  pictureId String?
+  picture   String?
+  tel       String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  cart      Cart[]
+  orders    Order[]
+  address   Address[]
+}
+
+model Address {
+  id           String   @id @default(uuid())
+  addressLine1 String?
+  addressLine2 String?
+  street       String?
+  subdistrict  String?
+  district     String?
+  province     String?
+  postalCode   String?
+  isDefault    Boolean?
+  fullAddress  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User    @relation(fields: [userId], references: [id])
+  Order  Order[]
+}
+
+model Category {
+  id        String         @id @default(uuid())
+  name      String
+  status    CategoryStatus @default(Active)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  products  Product[]
+}
+
+model Product {
+  id          String         @id @default(uuid())
+  title       String
+  description String
+  cost        Float          @default(0)
+  basePrice   Float
+  price       Float
+  sold        Int            @default(0)
+  stock       Int
+  status      ProductStatus  @default(Active)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  categoryId  String
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  category    Category       @relation(fields: [categoryId], references: [id])
+  images      ProductImage[]
+}
+
+model ProductImage {
+  id        String   @id @default(uuid())
+  url       String
+  fileId    String
+  isMain    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model Cart {
+  id          String     @id @default(uuid())
+  cardTotal   Float      @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  orderedById String
+  orderedBy   User       @relation(fields: [orderedById], references: [id])
+  cartItems   CartItem[]
+}
+
+model CartItem {
+  id        String  @id @default(uuid())
+  count     Int     @default(1)
+  price     Float
+  cartId    String
+  productId String
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Order {
+  id             String      @id @default(uuid())
+  orderNumber    String
+  totalAmount    Float
+  status         OrderStatus @default(Pending)
+  paymentImage   String?
+  paymentAt      DateTime?
+  phone          String?
+  note           String?
+  shippingFee    Float       @default(0)
+  trackingNumber String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  customerId     String
+  customer       User        @relation(fields: [customerId], references: [id])
+  items          OrderItem[]
+
+  addressId String
+  address   Address @relation(fields: [addressId], references: [id])
+}
+
+model OrderItem {
+  id           String   @id @default(uuid())
+  quantity     Int
+  price        Float
+  totalPrice   Float
+  productTitle String
+  productImage String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orderId      String
+  productId    String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product      Product  @relation(fields: [productId], references: [id])
 }
 
 enum UserStatus {
@@ -34,128 +160,9 @@ enum ProductStatus {
 }
 
 enum OrderStatus {
-  Pending // รอจ่าย
-  Paid // จ่ายแล้ว
-  Shipped // กำลังส่ง
-  Delivered // ส่งเสร็จแล้ว
-  Cancelled // ยกเลิก
-}
-
-model User {
-  id        String     @id @default(uuid())
-  name      String?
-  email     String     @unique
-  password  String
-  status    UserStatus @default(Active)
-  role      UserRole   @default(Customer)
-  pictureId String?
-  picture   String?
-  address   String?
-  tel       String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  cart      Cart[]
-  orders    Order[]
-}
-
-model Category {
-  id        String         @id @default(uuid())
-  name      String
-  status    CategoryStatus @default(Active)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
-  products  Product[]
-}
-
-model Product {
-  id          String        @id @default(uuid())
-  title       String
-  description String
-  cost        Float         @default(0)
-  basePrice   Float
-  price       Float
-  sold        Int           @default(0)
-  stock       Int
-  status      ProductStatus @default(Active)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  categoryId String
-  category   Category       @relation(fields: [categoryId], references: [id])
-  images     ProductImage[]
-  cartItems  CartItem[]
-  orderItems OrderItem[]
-}
-
-model ProductImage {
-  id        String   @id @default(uuid())
-  url       String
-  fileId    String
-  isMain    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-}
-
-//  ตะกร้า
-model Cart {
-  id        String   @id @default(uuid())
-  cardTotal Float    @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  orderedById String
-  orderedBy   User       @relation(fields: [orderedById], references: [id])
-  cartItems   CartItem[]
-}
-
-// ของในตะกร้า
-model CartItem {
-  id    String @id @default(uuid())
-  count Int    @default(1)
-  price Float
-
-  cartId String
-  cart   Cart   @relation(fields: [cartId], references: [id], onDelete: Cascade) // Cascade เป็นการเชื่อม action เมื่อ onDelete Cascade เมื่อ cart โดนลบ CartItem ก็โดนลบ
-
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
-}
-
-model Order {
-  id             String      @id @default(uuid())
-  orderNumber    String
-  totalAmount    Float
-  status         OrderStatus @default(Pending)
-  paymentImage   String?
-  paymentAt      DateTime?
-  address        String?
-  phone          String?
-  note           String?
-  shippingFee    Float       @default(0)
-  trackingNumber String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-
-  customerId String
-  customer   User        @relation(fields: [customerId], references: [id])
-  items      OrderItem[]
-}
-
-model OrderItem {
-  id           String   @id @default(uuid())
-  quantity     Int
-  price        Float
-  totalPrice   Float
-  productTitle String
-  productImage String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productId String
-  product   Product @relation(fields: [productId], references: [id])
+  Pending
+  Paid
+  Shipped
+  Delivered
+  Cancelled
 }

@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LogOut,
   ShoppingCart,
+  UserCogIcon,
   X,
 } from "lucide-react";
 import { UserType } from "@/types/user";
@@ -48,6 +49,11 @@ const SidebarAdmin = ({ user }: SidebarAdminProps) => {
       href: "/admin/orders",
       icon : <ClipboardList size={20}/>,
       label : "Orders"
+    },
+    {
+      href : "/admin/user",
+      icon : <UserCogIcon size={20}/>,
+      label : "User Management"
     }
   ];
 

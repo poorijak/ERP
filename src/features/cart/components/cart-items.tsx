@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { formatPrice } from "@/lib/formatPrice";
+import { formatPrice } from "@/lib/format/formatPrice";
 import { CartType } from "@/types/cart";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import Image from "next/image";

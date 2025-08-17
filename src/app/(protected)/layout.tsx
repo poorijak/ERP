@@ -9,14 +9,14 @@ interface MainLayoutProps {
 const ProtectedLayout = async ({ children }: MainLayoutProps) => {
   const user = await authCheck();
 
-
   if (!user || user.status !== "Active") {
-    redirect('/auth/signin')
+    redirect("/auth/signin");
   }
 
   return (
-    <div className="min-h-svh flex flex-col">
+    <div className="flex flex-col">
       <HeaderCustomer user={user} />
+      {/* <AccountSidebar /> */}
       <main className="pt-16">{children}</main>
     </div>
   );

@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import AddToCartButton from "@/features/cart/components/add-to-cart-button";
-import { formatPrice } from "@/lib/formatPrice";
+import { formatPrice } from "@/lib/format/formatPrice";
 import { cn } from "@/lib/utils";
 import { ProductType } from "@/types/product";
 import Image from "next/image";

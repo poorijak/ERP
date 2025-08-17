@@ -19,7 +19,9 @@ export const checkoutFormAction = async (
     phone: formData.get("phone") as string,
     note: formData.get("note") as string,
     useProfileData: formData.get("use-profile-data") as string,
+    addressId : formData.get("address-id") as string,
   };
+
 
   const result = await createOrder(data);
 

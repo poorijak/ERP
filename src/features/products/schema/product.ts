@@ -3,6 +3,7 @@ import { z } from "zod";
 const MIN_TITLE_LENGTH = 3;
 const MIN_DESC_LENGTH = 10;
 
+
 const ERROR_MESSAGE = {
   title: `Product title must be at least ${MIN_TITLE_LENGTH} characters`,
   description: `Description must be at least ${MIN_DESC_LENGTH} characters`,
@@ -29,3 +30,4 @@ export const ProductSchema = z.object({
 
   stock: z.coerce.number().positive({ message: ERROR_MESSAGE.stock }),
 });
+

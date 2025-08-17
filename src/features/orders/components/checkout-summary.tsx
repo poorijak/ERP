@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { formatPrice } from "@/lib/formatPrice";
+import { formatPrice } from "@/lib/format/formatPrice";
 import { CartType } from "@/types/cart";
 import Image from "next/image";
 import React from "react";

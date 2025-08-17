@@ -17,7 +17,7 @@ interface dailyDataRecord {
   };
 }
 
-// รับเป็น object key from , to 
+// รับเป็น object key from , to
 export const getSaleData = async ({ from, to }: DateRangeParas) => {
   const user = await authCheck();
 

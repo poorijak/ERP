@@ -22,6 +22,9 @@ const page = async ({ params }: OrderDatailPageProps) => {
 
   const order = await getOrderById(user.id, id);
 
+  console.log(order);
+  
+
   if (!order) {
     redirect("/my-orders")
   }

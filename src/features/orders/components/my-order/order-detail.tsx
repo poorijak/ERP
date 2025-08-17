@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatPrice } from "@/lib/formatPrice";
+import { formatPrice } from "@/lib/format/formatPrice";
 import { generatePromptPayQR } from "@/lib/generatePromptPayQR";
 import { getStatusColor, getStatusText } from "@/lib/utils";
 import { OrderType } from "@/types/order";
@@ -121,7 +121,9 @@ const OrderDetail = ({ order }: OrderDetailProps) => {
             <div className="grid-col-1 grid gap-4 sm:grid-cols-3">
               <div>
                 <h3 className="mb-1 font-medium">ที่อยู่จัดส่ง : </h3>
-                <p className="text-muted-foreground">{order.address || "-"}</p>
+                <p className="text-muted-foreground">
+                  {order.address.fullAddress}
+                </p>
               </div>
               <div>
                 <h3 className="mb-1 font-medium">เบอร์โทรศัพท์ : </h3>

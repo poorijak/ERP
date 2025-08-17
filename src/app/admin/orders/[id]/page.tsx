@@ -43,6 +43,7 @@ const page = async ({ params }: adminOrdersProps) => {
         </Button>
       </div>
 
+
       <AdminOrderDetail order={order}/>
     </div>
   );

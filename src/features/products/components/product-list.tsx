@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +39,7 @@ import DeleteProductModal from "./product_action/delete_product_modal";
 import RestoreProductModal from "./product_action/restore_product_modal";
 import DetailProductModal from "./product_action/detail_product_modal";
 import { useRouter, useSearchParams } from "next/navigation";
+import Paginaiton from "@/components/shared/pagination";
 
 interface ProductListProps {
   products: ProductType[];
@@ -56,12 +57,17 @@ const ProductList = ({
 
   const searchParams = useSearchParams();
   const route = useRouter();
+
+  // page
   const totalPage = Math.ceil(totalCount / limit);
+
+  
 
   // modal State
   const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(
     null,
   );
+
   const [isDeleteModal, setIsDeleteModal] = useState(false);
   const [isRestoreModal, setIsRestoreModal] = useState(false);
   const [isDetailModal, setIsDetailModal] = useState(false);
@@ -115,12 +121,14 @@ const ProductList = ({
     setSelectedProduct(product);
     setIsDetailModal(true);
   };
-  
+
   const handlePageChange = (newPage: number) => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set("page", newPage.toString());
     route.push(`/admin/products?${newParams.toString()}`);
   };
+
+  
 
   return (
     <>
@@ -332,25 +340,16 @@ const ProductList = ({
               )}
             </TableBody>
           </Table>
-
-          <div className="mt-4 flex items-center justify-between">
-            <Button
-              className="w-30"
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page <= 1}
-            >
-              Previous
-            </Button>
-            <span>Page {page} of {totalPage}</span>
-            <Button
-              className="w-30"
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page >= totalPage}
-            >
-              Next
-            </Button>
-          </div>
+          
         </CardContent>
+
+        <CardFooter>
+          <Paginaiton
+            page={page}
+            totalPage={totalPage}
+            onPageChange={handlePageChange}
+          />
+        </CardFooter>
       </Card>
 
       <DeleteProductModal

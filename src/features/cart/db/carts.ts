@@ -34,7 +34,7 @@ export const getUserCart = async (userId: string | null) => {
       where: {
         orderedById: userId,
       },
-
+      
       include: {
         cartItems: {
           include: {

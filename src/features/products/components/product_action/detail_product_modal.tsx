@@ -16,7 +16,7 @@ import Image from "next/image";
 import React from "react";
 import dayjs from "@/lib/dayjs";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatPrice } from "@/lib/formatPrice";
+import { formatPrice } from "@/lib/format/formatPrice";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,

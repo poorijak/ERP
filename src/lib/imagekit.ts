@@ -68,7 +68,17 @@ export const deleteFromImageKit = async (FileId: string) => {
     }
 
     await imagekit.deleteFile(FileId);
-  } catch (error) {
+    return {
+      message: "Deleted successfully",
+    };
+  } catch (error: any) {
+    const msg = error?.message || "";
+
+    if (msg.includes("The requested file does not exist")) {
+      console.warn("ไฟล์ไม่อยู่แล้วในระบบ");
+      return { message: "File not found" };
+    }
+
     console.error("Error deleting image from imagekit", error);
     return {
       message: "Failed to delete image",

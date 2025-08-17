@@ -2,7 +2,13 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,12 +25,23 @@ import EditCategoryModal from "@/features/categories/components/cate_action/edit
 import { useEffect, useState } from "react";
 import DeleteCategoryModal from "@/features/categories/components/cate_action/delete-category-modal";
 import RestoreCategoryModal from "@/features/categories/components/cate_action/restore-category-modal";
+import Paginaiton from "@/components/shared/pagination";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface CategoryListProps {
   categories: CategoryType[];
+  page : number
+  limit: number
+  totalCount : number
 }
 
-const CategoryList = ({ categories }: CategoryListProps) => {
+const CategoryList = ({ categories , page , limit , totalCount }: CategoryListProps) => {
+
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  const totalPage = Math.ceil(totalCount / limit)
+
   // Modal State
   const [isEditModal, setIsEditModal] = useState(false);
   const [isDeleteModal, setIsDeleteModal] = useState(false);
@@ -80,6 +97,13 @@ const CategoryList = ({ categories }: CategoryListProps) => {
     setSearchTerm(event.target.value);
   };
 
+  const onPageChange = (newPage : number) => {
+    const newParams = new URLSearchParams(searchParams)
+    newParams.set("page" , newPage.toString())
+    router.push(`/admin/categories?${newParams.toString()}`)
+  }
+
+
   return (
     <>
       <Card>
@@ -87,7 +111,7 @@ const CategoryList = ({ categories }: CategoryListProps) => {
           <CardTitle className="text-lg sm:text-xl">Category List</CardTitle>
 
           <Tabs value={activeTab} onValueChange={handleTabActive}>
-            <TabsList className="grid grid-cols-3 mb-4">
+            <TabsList className="mb-4 grid grid-cols-3">
               <TabsTrigger value="all">All Categories</TabsTrigger>
               <TabsTrigger value="active">Active</TabsTrigger>
               <TabsTrigger value="inactive">Inactive</TabsTrigger>
@@ -96,7 +120,7 @@ const CategoryList = ({ categories }: CategoryListProps) => {
             <div className="relative">
               <Search
                 size={16}
-                className="absolute left-2 top-2.5 text-muted-foreground"
+                className="text-muted-foreground absolute top-2.5 left-2"
               />
               <Input
                 placeholder="Search categories..."
@@ -109,15 +133,15 @@ const CategoryList = ({ categories }: CategoryListProps) => {
         </CardHeader>
 
         <CardContent>
-          <div className="border rounded-md overflow-hidden">
-            <div className="grid grid-cols-12 bg-muted py-3 px-2 sm:px-4 text-xs sm:text-sm font-medium">
+          <div className="overflow-hidden rounded-md border">
+            <div className="bg-muted grid grid-cols-12 px-2 py-3 text-xs font-medium sm:px-4 sm:text-sm">
               <div className="col-span-1 hidden sm:block">No.</div>
               <div className="col-span-6 sm:col-span-5">Category name</div>
-              <div className="col-span-2 text-center hidden sm:block">
+              <div className="col-span-2 hidden text-center sm:block">
                 Products
               </div>
-              <div className="col-span-3 sm:col-span-2 text-center">Status</div>
-              <div className="col-span-3 sm:col-span-2 text-right">Actions</div>
+              <div className="col-span-3 text-center sm:col-span-2">Status</div>
+              <div className="col-span-3 text-right sm:col-span-2">Actions</div>
             </div>
           </div>
 
@@ -126,16 +150,16 @@ const CategoryList = ({ categories }: CategoryListProps) => {
               filteredCategories.map((category, index) => (
                 <div
                   key={index}
-                  className="grid grid-cols-12 py-3 px-2 sm:px-4 border-t items-center hover:bg-gray-50 transition-colors duration-100 text-sm"
+                  className="grid grid-cols-12 items-center border-t px-2 py-3 text-sm transition-colors duration-100 hover:bg-gray-50 sm:px-4"
                 >
                   <div className="col-span-1 hidden sm:block">{index + 1}</div>
-                  <div className="col-span-6 sm:col-span-5 truncate pr-2">
+                  <div className="col-span-6 truncate pr-2 sm:col-span-5">
                     {category.name}
                   </div>
-                  <div className="col-span-2 text-center hidden sm:block">
+                  <div className="col-span-2 hidden text-center sm:block">
                     0
                   </div>
-                  <div className="col-span-3 sm:col-span-2 text-center">
+                  <div className="col-span-3 text-center sm:col-span-2">
                     <Badge
                       variant={
                         category.status === "Active" ? "default" : "destructive"
@@ -145,7 +169,7 @@ const CategoryList = ({ categories }: CategoryListProps) => {
                       {category.status}
                     </Badge>
                   </div>
-                  <div className="col-span-3 sm:col-span-2 text-right">
+                  <div className="col-span-3 text-right sm:col-span-2">
                     {/* Mobile Action Buttons */}
                     <div className="flex justify-end gap-1 md:hidden">
                       <Button
@@ -222,11 +246,15 @@ const CategoryList = ({ categories }: CategoryListProps) => {
                 </div>
               ))
             ) : (
-              <div className="py-8 text-center text-muted-foreground">
+              <div className="text-muted-foreground py-8 text-center">
                 No categories found matching your search
               </div>
             )}
           </ScrollArea>
+
+          <CardFooter>
+            <Paginaiton page={page} totalPage={totalPage} onPageChange={onPageChange}/>
+          </CardFooter>
         </CardContent>
       </Card>
 
